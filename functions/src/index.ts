@@ -22,7 +22,7 @@ export const requestOTP = functions.https.onRequest((request, response) => {
 });
 
 export const authConfirmOTP = functions.https.onRequest((request, response) => {
-  const userId = "asdasdasd";
+  const userId = "userId";
   const jwt = userId;
   response.send({
     token: jwt
@@ -44,7 +44,7 @@ export const changeUserRole = functions.https.onRequest((request, response) => {
 });
 
 export const getUserCV = functions.https.onRequest((request, response) => {
-  const userId = "userId";
+  const userId = request.header("authToken") as string;
   const cvId = "cvId";
   firestore
     .collection("users")
@@ -53,81 +53,14 @@ export const getUserCV = functions.https.onRequest((request, response) => {
     .doc(cvId)
     .get()
     .then((documentSnapshot: FirebaseFirestore.DocumentSnapshot) => {
-      const userInfo = documentSnapshot.get("userInfo") as { [id: string]: any };
-      const avatarURL = userInfo["avatarURL"] as string;
-      response.send({
-        id: "cvMockIDasdasdasd",
-        userInfo: {
-          avatarURL: avatarURL,
-          name: 'Alexandr Orlov',
-          role: 'Software developer'
-        },
-        contacts: {
-          phones: [
-            '+380664888176',
-            '+6590378917'
-          ],
-          emails: [
-            'job.aleksandrorlov@gmail.com'
-          ],
-          messangers: [
-            {
-              type: 'telegram',
-              link: 'https://t.me/luximetr'
-            }
-          ]
-        },
-        experience: [
-          {
-            dateStart: '2016',
-            dateEnd: '2018',
-            companyName: 'Brander'
-          },
-          {
-            dateStart: '2018',
-            dateEnd: '2020',
-            companyName: 'Deskera'
-          },
-          {
-            dateStart: '2020',
-            companyName: 'Google'
-          }
-        ],
-        numbers: [
-          {
-            value: 3,
-            title: 'years in iOS development'
-          },
-          {
-            value: 11,
-            title: 'projects I was involved'
-          }
-        ],
-        skills: [
-          {
-            name: 'UI',
-            skills: [
-              'Snapkit',
-              'PureLayout'
-            ]
-          },
-          {
-            name: 'Networking',
-            skills: [
-              'Alamofire',
-              'NSURLSession'
-            ]
-          }
-        ]
-      });
-    })
-
+      response.send(documentSnapshot.data());
+    });
 });
 
 export const changeCVAvatar = functions.https.onRequest((request, response) => {
   const contentType = request.query.mimeType as string;
   const userId = "userId";
-  const cvId = "cvId";
+  const cvId = request.query.cvId as string;
   const imageData = request.rawBody;
   const contentTypeTypeParts = contentType.split("/")
   const fileType = contentTypeTypeParts[contentTypeTypeParts.length - 1];
