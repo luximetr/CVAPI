@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions';
+import {DocumentSnapshot} from "firebase-functions/lib/providers/firestore";
 const admin = require('firebase-admin');
 
 const serviceAccount = require("../cvapp-8ebd9-firebase-adminsdk-9tzat-ce427f57b5.json");
@@ -12,21 +13,24 @@ const storage = admin.storage();
 const firestore = admin.firestore();
 
 export const requestOTP = functions.https.onRequest((request, response) => {
-  if (request.method === 'GET') {
-    response.send("Error")
-  }
-  console.log("phoneNumber:" + request.body.phone);
   response.send({
     "result": "success"
   });
 });
 
 export const authConfirmOTP = functions.https.onRequest((request, response) => {
-  const userId = "userId";
-  const jwt = userId;
-  response.send({
-    token: jwt
-  });
+  const code = request.body.code as string;
+  if (code === 'sEcrEt17') {
+    const jwt = "adminUserToken";
+    response.send({
+      token: jwt
+    });
+  } else {
+    const jwt = "guestUserToken";
+    response.send({
+      token: jwt
+    });
+  }
 });
 
 export const changeUserName = functions.https.onRequest((request, response) => {
@@ -48,7 +52,7 @@ export const getUserCV = functions.https.onRequest((request, response) => {
   const cvId = "cvId";
   firestore
     .collection("users")
-    .doc(userId)
+    .where('id', '==', userId)
     .collection("CVs")
     .doc(cvId)
     .get()
@@ -56,6 +60,20 @@ export const getUserCV = functions.https.onRequest((request, response) => {
       response.send(documentSnapshot.data());
     });
 });
+
+export  const getNetworkCVs = functions.https.onRequest((request, response) => {
+  const userId = request.header("authToken") as string;
+  firestore
+    .collection("users")
+    .get()
+    .then((snapshot: FirebaseFirestore.QuerySnapshot) => {
+      const data = snapshot.docs.map((doc: DocumentSnapshot) => doc.data()) as [];
+      const filteredData = data.filter((value: DocumentSnapshot) => value.id !== userId )
+      response.send(filteredData);
+    });
+
+});
+
 
 export const changeCVAvatar = functions.https.onRequest((request, response) => {
   const contentType = request.query.mimeType as string;
@@ -66,13 +84,6 @@ export const changeCVAvatar = functions.https.onRequest((request, response) => {
   const fileType = contentTypeTypeParts[contentTypeTypeParts.length - 1];
   const fileName = "avatar." + fileType;
   const filePath = "usersData/" + userId + "/" + fileName;
-
-  // console.log({
-  //   contentType: contentType,
-  //   userId: userId,
-  //   filePath: filePath,
-  //   imageData: imageData
-  // });
 
   const file = storage.bucket().file(filePath);
   const options = {
