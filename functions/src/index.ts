@@ -20,18 +20,19 @@ export const requestOTP = functions.https.onRequest((request, response) => {
 
 export const authConfirmOTP = functions.https.onRequest((request, response) => {
   const code = request.body.code as string;
-  if (code === 'sEcrEt17') {
-    const jwt = "adminUserToken";
-    response.send({
-      token: jwt
-    });
-  } else {
-    const jwt = "guestUserToken";
-    response.send({
-      token: jwt
-    });
-  }
+  const jwt = getJWTForCode(code);
+  response.send({
+    token: jwt
+  });
 });
+
+function getJWTForCode(code: string): string {
+  if (code === 'sEcrEt17') {
+    return "userId"
+  } else {
+    return "guestUserId"
+  }
+}
 
 export const changeUserName = functions.https.onRequest((request, response) => {
   console.log("Change name: " + request.body.name);
@@ -47,18 +48,34 @@ export const changeUserRole = functions.https.onRequest((request, response) => {
   })
 });
 
+enum ErrorCode {
+  entityNotFound = 1
+}
+
 export const getUserCV = functions.https.onRequest((request, response) => {
   const userId = request.header("authToken") as string;
-  const cvId = "cvId";
   firestore
     .collection("users")
-    .where('id', '==', userId)
+    .doc(userId)
     .collection("CVs")
-    .doc(cvId)
     .get()
-    .then((documentSnapshot: FirebaseFirestore.DocumentSnapshot) => {
-      response.send(documentSnapshot.data());
-    });
+    .then((snapshot: FirebaseFirestore.QuerySnapshot) => {
+      const firstCV = snapshot.docs[0].data()
+      if (firstCV !== undefined) {
+        response.send({
+          success: true,
+          data: firstCV
+        })
+      } else {
+        response.send({
+          success: false,
+          error: {
+            message: "CV not found",
+            code: ErrorCode.entityNotFound
+          }
+        })
+      }
+    })
 });
 
 export  const getNetworkCVs = functions.https.onRequest((request, response) => {
@@ -71,7 +88,6 @@ export  const getNetworkCVs = functions.https.onRequest((request, response) => {
       const filteredData = data.filter((value: DocumentSnapshot) => value.id !== userId )
       response.send(filteredData);
     });
-
 });
 
 
