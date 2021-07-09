@@ -93,13 +93,13 @@ export const getNetworkCVs = functions.https.onRequest((request, response) => {
 });
 
 export const getNetworkCV = functions.https.onRequest((request, response) => {
-  const userId = request.query.cvId as string;
+  const cvId = request.body.id as string;
   firestore
       .collectionGroup('CVs')
-      .doc(userId)
+      .where('id', '==', cvId)
       .get()
-      .then((snapshot: FirebaseFirestore.DocumentSnapshot) => {
-        const data = snapshot.data
+      .then((snapshot: FirebaseFirestore.QuerySnapshot) => {
+        const data = snapshot.docs[0].data()
         response.send({
           success: true,
           data: data
