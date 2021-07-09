@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import * as functions from "firebase-functions";
 const admin = require('firebase-admin');
 
 const serviceAccount = require("../cvapp-8ebd9-firebase-adminsdk-9tzat-ce427f57b5.json");
@@ -77,7 +77,7 @@ export const getUserCV = functions.https.onRequest((request, response) => {
     })
 });
 
-export  const getNetworkCVs = functions.https.onRequest((request, response) => {
+export const getNetworkCVs = functions.https.onRequest((request, response) => {
   const userId = request.header("authToken") as string;
   firestore
       .collectionGroup('CVs')
@@ -85,6 +85,21 @@ export  const getNetworkCVs = functions.https.onRequest((request, response) => {
       .then((snapshot: FirebaseFirestore.QuerySnapshot) => {
         const allData = snapshot.docs.map((doc) => {return doc.data()})
         const data = allData.filter((value) => value.userId !== userId )
+        response.send({
+          success: true,
+          data: data
+        })
+  });
+});
+
+export const getNetworkCV = functions.https.onRequest((request, response) => {
+  const userId = request.query.cvId as string;
+  firestore
+      .collectionGroup('CVs')
+      .doc(userId)
+      .get()
+      .then((snapshot: FirebaseFirestore.DocumentSnapshot) => {
+        const data = snapshot.data
         response.send({
           success: true,
           data: data
